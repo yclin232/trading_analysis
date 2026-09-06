@@ -17,7 +17,7 @@
 ### 步驟 2：下載 (Clone) 專案
 開啟 PowerShell 或 Terminal 終端機，執行：
 ```bash
-git clone https://github.com/lulu930128/trading_analysis.git
+git clone https://github.com/yclin232/trading_analysis.git
 cd trading_analysis
 ```
 
