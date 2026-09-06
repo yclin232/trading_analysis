@@ -172,7 +172,7 @@ def _latest_two_daily_rows(
     try:
         resolved = USDailyOhlcvPlatform(db).read(
             symbol=symbol,
-            bars=90,
+            bars=5,
             to_date=expected_trade_date,
         )
     except (LookupError, ValueError):

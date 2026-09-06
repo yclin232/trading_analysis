@@ -1,8 +1,8 @@
-﻿from pathlib import Path
+from pathlib import Path
 
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -356,6 +356,22 @@ class Settings(BaseSettings):
     us_canonical_market_data_mode: Literal[
         "off", "shadow", "compare", "canary", "on"
     ] | None = None
+
+    @field_validator("canonical_market_data_mode", mode="before")
+    @classmethod
+    def _normalize_canonical_mode(cls, value: object) -> object:
+        if isinstance(value, str):
+            cleaned = value.strip().lower()
+            return cleaned or "off"
+        return value
+
+    @field_validator("us_canonical_market_data_mode", mode="before")
+    @classmethod
+    def _normalize_us_canonical_mode(cls, value: object) -> object:
+        if isinstance(value, str):
+            cleaned = value.strip().lower()
+            return cleaned or None
+        return value
     us_canonical_shadow_symbols: str = ""
     us_canonical_canary_max_symbols: int = Field(default=5, ge=1, le=50)
     kgi_superpy_person_id: str | None = None

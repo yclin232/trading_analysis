@@ -3,9 +3,10 @@ from collections.abc import Callable, Iterable
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.db.models import StockMaster
+from app.db.models import MarketDailyPrice, StockMaster
 from app.db.session import SessionLocal
 from app.market.broker_branch import ensure_broker_branch_daily
 from app.market.backfill import backfill_tpex_trading_stock, backfill_twse_stock_day
@@ -295,8 +296,20 @@ def _ensure_current_month_daily_prices(
     stock_id: str,
     target_date: date,
     sleep_seconds: float,
+    min_required_bars: int = 60,
+    historical_lookback_days: int = 240,
 ) -> dict:
-    start_date = date(target_date.year, target_date.month, 1)
+    existing_count = (
+        db.query(func.count(MarketDailyPrice.id))
+        .filter(MarketDailyPrice.stock_id == stock_id)
+        .scalar()
+        or 0
+    )
+    if existing_count < min_required_bars:
+        start_date = target_date - timedelta(days=historical_lookback_days)
+    else:
+        start_date = date(target_date.year, target_date.month, 1)
+
     market = _get_stock_market(db=db, stock_id=stock_id)
 
     if market == "TWSE":

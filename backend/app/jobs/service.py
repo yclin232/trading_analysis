@@ -372,6 +372,7 @@ def find_active_job(
     job_type: str,
     target: str | None = None,
     request: Any = None,
+    max_active_age_seconds: float = 300,
 ) -> JobRun | None:
     request_json = _to_json(request)
     query = db.query(JobRun).filter(
@@ -385,17 +386,29 @@ def find_active_job(
     else:
         query = query.filter(JobRun.request_json == request_json)
 
-    return query.order_by(JobRun.created_at.desc(), JobRun.id.desc()).first()
+    job = query.order_by(JobRun.created_at.desc(), JobRun.id.desc()).first()
+    if job is not None:
+        last_activity = job.updated_at or job.created_at
+        if last_activity and last_activity < utc_now() - timedelta(seconds=max_active_age_seconds):
+            job.status = "error"
+            job.error_message = "Job timed out or interrupted."
+            job.message = "Job stopped before completion."
+            job.ended_at = utc_now()
+            db.commit()
+            return None
+
+    return job
 
 
 def find_active_job_by_target(
     db: Session,
     job_type: str,
     target: str | None = None,
+    max_active_age_seconds: float = 300,
 ) -> JobRun | None:
     """Find an active lease regardless of request metadata differences."""
 
-    return (
+    job = (
         db.query(JobRun)
         .filter(
             JobRun.job_type == job_type,
@@ -405,6 +418,17 @@ def find_active_job_by_target(
         .order_by(JobRun.created_at.desc(), JobRun.id.desc())
         .first()
     )
+    if job is not None:
+        last_activity = job.updated_at or job.created_at
+        if last_activity and last_activity < utc_now() - timedelta(seconds=max_active_age_seconds):
+            job.status = "error"
+            job.error_message = "Job timed out or interrupted."
+            job.message = "Job stopped before completion."
+            job.ended_at = utc_now()
+            db.commit()
+            return None
+
+    return job
 
 
 def find_recent_successful_job(

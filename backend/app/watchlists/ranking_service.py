@@ -453,7 +453,7 @@ def _apply_intraday_overlay_to_row(row: dict, overlay: dict) -> None:
                 str(overlay_primary["label"]),
             )
 
-    row["time"] = overlay["time"]
+    row["time"] = _date_text(overlay["time"]) if overlay.get("time") is not None else None
     row["close"] = overlay["close"]
     row["change"] = overlay["change"]
     row["change_pct"] = overlay["change_pct"]

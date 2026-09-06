@@ -263,13 +263,48 @@ def delete_watchlist_group(
     
 
     
+def _backfill_new_stock_history(stock_id: str) -> None:
+    """When a new stock is added to a watchlist, backfill its historical data and indicators."""
+    from app.db.session import SessionLocal
+    from app.market.stock_selection_refresh import refresh_selected_stock_data
+    from app.market.intraday import refresh_taiwan_intraday_bars
+
+    db = SessionLocal()
+    try:
+        refresh_selected_stock_data(db=db, stock_id=stock_id, profile="full")
+        refresh_taiwan_intraday_bars(db=db, stock_id=stock_id)
+    except Exception:
+        pass
+    finally:
+        db.close()
+
+
 @router.post("/items", response_model=WatchlistItemRead, status_code=status.HTTP_201_CREATED)
 def create_watchlist_item(
     payload: WatchlistItemCreate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ):
     try:
-        return service.create_item(db=db, payload=payload)
+        item = service.create_item(db=db, payload=payload)
+        # Immediately backfill historical daily prices so K-line & indicators are available instantly
+        from app.market.stock_selection_refresh import _ensure_current_month_daily_prices, expected_daily_price_date
+        try:
+            target_date = expected_daily_price_date() or date.today()
+            _ensure_current_month_daily_prices(
+                db=db,
+                stock_id=payload.stock_id,
+                target_date=target_date,
+                sleep_seconds=0.05,
+                min_required_bars=60,
+                historical_lookback_days=240,
+            )
+            db.expire_all()
+        except Exception:
+            pass
+
+        background_tasks.add_task(_backfill_new_stock_history, payload.stock_id)
+        return item
     except service.WatchlistGroupNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     except service.WatchlistStockNotFoundError as exc:

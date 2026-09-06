@@ -229,6 +229,20 @@ def get_group_tree(
 ) -> list[dict]:
     groups = list_groups(db=db, is_active=is_active)
 
+    if not groups and (is_active is None or is_active is True):
+        total_existing = db.query(WatchlistGroup).count()
+        if total_existing == 0:
+            default_group = WatchlistGroup(
+                group_name="預設自選",
+                description="系統預設自選股分組",
+                sort_order=100,
+                is_active=True,
+            )
+            db.add(default_group)
+            db.commit()
+            db.refresh(default_group)
+            groups = [default_group]
+
     children_by_parent: dict[int | None, list[WatchlistGroup]] = {}
 
     for group in groups:

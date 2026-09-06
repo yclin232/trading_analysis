@@ -663,7 +663,7 @@ def _latest_adr_row(
     try:
         result = USDailyOhlcvPlatform(db).read(
             symbol=symbol,
-            bars=90,
+            bars=5,
             now=available_at,
             to_date=expected_trade_date,
         )

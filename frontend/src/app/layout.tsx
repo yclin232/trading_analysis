@@ -9,20 +9,25 @@ export const metadata: Metadata = {
 
 const preferenceInitScript = `
 try {
+  var migratedKey = "omi:theme:v4_dark_high_contrast";
+  if (!window.localStorage.getItem(migratedKey)) {
+    window.localStorage.setItem("omi:settings:color", "dark");
+    window.localStorage.setItem("omi:settings:high-contrast", "true");
+    window.localStorage.setItem(migratedKey, "true");
+  }
+
   var omiTheme = window.localStorage.getItem("omi:settings:color");
   var omiHighContrast = window.localStorage.getItem("omi:settings:high-contrast");
-  if (omiTheme === "high-contrast") {
+  if (omiTheme === "light") {
+    document.documentElement.dataset.theme = "light";
+  } else {
     document.documentElement.dataset.theme = "dark";
-    if (omiHighContrast !== "false") {
-      document.documentElement.dataset.contrast = "high";
-    }
-  } else if (omiTheme === "light" || omiTheme === "dark") {
-    document.documentElement.dataset.theme = omiTheme;
   }
-  if (omiHighContrast === "true") {
-    document.documentElement.dataset.contrast = "high";
-  } else if (omiHighContrast === "false") {
+
+  if (omiHighContrast === "false") {
     delete document.documentElement.dataset.contrast;
+  } else {
+    document.documentElement.dataset.contrast = "high";
   }
 
   var omiLocale = window.localStorage.getItem("omi:settings:language");
@@ -44,7 +49,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-Hant" className="h-full antialiased" suppressHydrationWarning>
+    <html
+      lang="zh-Hant"
+      data-theme="dark"
+      data-contrast="high"
+      className="h-full antialiased"
+      suppressHydrationWarning
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: preferenceInitScript }} />
       </head>

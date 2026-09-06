@@ -489,7 +489,12 @@ def _provider_query(requirement: DataRequirementV2) -> tuple[str, str, int]:
         ).days
         + 1,
     )
-    range_value = "1d" if days <= 1 else "5d" if days <= 21 else "1mo" if days <= 31 else "3mo"
+    if fetch_interval == "1m":
+        range_value = "1d" if days <= 1 else "5d"
+    elif fetch_interval in {"5m", "15m", "30m"}:
+        range_value = "1d" if days <= 1 else "5d" if days <= 7 else "1mo"
+    else:
+        range_value = "1d" if days <= 1 else "5d" if days <= 7 else "1mo" if days <= 31 else "3mo"
     return range_value, fetch_interval, days
 
 

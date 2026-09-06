@@ -21,6 +21,7 @@ from app.market.tw_intraday_platform import (
     intraday_history_config,
     project_taiwan_intraday_bars,
     read_taiwan_intraday_bars,
+    refresh_taiwan_intraday_bars,
 )
 from app.market_data.contracts import (
     MarketSession,
@@ -1008,6 +1009,8 @@ def _load_intraday_trend_uncached(
         stock_id,
         market=market,
     )
+    points = []
+    metadata = {}
     try:
         resolved = read_taiwan_intraday_bars(
             db,
@@ -1021,7 +1024,6 @@ def _load_intraday_trend_uncached(
             exc,
             operation="intraday.shared_cache_read",
         )
-        points = []
         metadata = {
             "provider": None,
             "source": None,
@@ -1029,6 +1031,33 @@ def _load_intraday_trend_uncached(
                 f"TW_INTRADAY_PLATFORM_{type(exc).__name__.upper()}"
             ],
         }
+
+    # Automatically refresh from providers if intraday points are missing/empty or stale
+    point_dates = [
+        _normalize_bar_time(pt).date()
+        for p in points
+        if isinstance(p, dict) and (pt := _point_datetime(p)) is not None
+    ]
+    target_date = datetime.now(TAIPEI_TZ).date()
+    needs_live_refresh = not points or (point_dates and max(point_dates) < target_date)
+    if needs_live_refresh:
+        try:
+            refresh_res = refresh_taiwan_intraday_bars(
+                db,
+                stock_id=stock_id,
+                interval="1m",
+                range_value="1d",
+            )
+            refreshed_points, refreshed_metadata = project_taiwan_intraday_bars(db, refresh_res)
+            if refreshed_points:
+                points = refreshed_points
+                metadata = refreshed_metadata
+        except Exception as exc:
+            observe_provider_fallback(
+                exc,
+                operation="intraday.shared_cache_refresh",
+            )
+
     source = str(metadata.get("source") or "unavailable")
     result = {
         "stock_id": stock_id,
@@ -1041,7 +1070,21 @@ def _load_intraday_trend_uncached(
         "interval": "1m",
         "source_interval": metadata.get("source_interval") or "1m",
         "effective_interval": "1m",
-        "warnings": list(metadata.get("limitations") or []),
+        "warnings": [
+            item
+            for item in (metadata.get("limitations") or [])
+            if str(item)
+            not in {
+                "PRE_RESOLUTION_SATISFIED",
+                "PERSISTENCE_NOT_REQUIRED",
+                "ACQUISITION_NOT_ATTEMPTED",
+                "READ_POLICY_FORBIDS_ACQUISITION",
+                "TW_INTRADAY_CANONICAL_CACHE_MISSING",
+                "BAR_SERIES_COMPOSED_FROM_MULTIPLE_CANDIDATES",
+                "OFFICIAL_DAILY_SERIES_RECONCILED",
+                "OFFICIAL_DAILY_SAME_DATE_CONFLICT_RESOLVED",
+            }
+        ],
         "bar_resolution": metadata.get("resolved_health"),
         "bar_candidate_rejections": metadata.get("candidate_rejections") or [],
         "bar_component_raw_result_ids": (

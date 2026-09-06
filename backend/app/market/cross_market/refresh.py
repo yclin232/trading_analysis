@@ -62,7 +62,7 @@ def _latest_us_trade_date(
     try:
         latest = USDailyOhlcvPlatform(db).read(
             symbol=symbol,
-            bars=90,
+            bars=2,
             to_date=expected_trade_date,
         )
     except (LookupError, ValueError):

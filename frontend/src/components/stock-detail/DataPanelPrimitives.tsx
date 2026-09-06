@@ -82,7 +82,7 @@ export function MetricRow({
   tone?: string;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 border-t border-omi-border-subtle py-2 text-xs">
+    <div className="flex items-center justify-between gap-4 border-t border-omi-border-subtle py-2 text-sm">
       <span className="text-omi-text-muted">{label}</span>
       <span className={`font-semibold ${tone}`}>{value}</span>
     </div>
@@ -98,7 +98,7 @@ export function ChipMetricBlock({
 }) {
   return (
     <div className="border border-omi-border-subtle bg-omi-surface px-3 py-2">
-      <div className="text-xs font-bold text-omi-text">{title}</div>
+      <div className="text-sm font-bold text-omi-text-strong">{title}</div>
       <div className="mt-1">{children}</div>
     </div>
   );

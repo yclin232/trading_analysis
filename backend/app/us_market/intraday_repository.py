@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo
 
 from pydantic import ValidationError
 from sqlalchemy import case, func, or_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, defer
 
 from app.db.models import (
     MarketIntradayBar,
@@ -165,6 +165,7 @@ class USQuoteRepository:
                 self._db.query(USQuoteSnapshot, RawFetchResult, SourceRegistry)
                 .join(RawFetchResult, RawFetchResult.id == USQuoteSnapshot.raw_result_id)
                 .join(SourceRegistry, SourceRegistry.id == USQuoteSnapshot.source_id)
+                .options(defer(RawFetchResult.raw_text))
                 .filter(USQuoteSnapshot.symbol == instrument.symbol)
                 .filter(USQuoteSnapshot.provider == descriptor.provider_key)
                 .order_by(USQuoteSnapshot.event_at.desc(), USQuoteSnapshot.id.desc())
@@ -314,6 +315,7 @@ class USIntradayBarRepository:
                 .join(MarketIntradayBarLineage, MarketIntradayBarLineage.bar_id == MarketIntradayBar.id)
                 .join(RawFetchResult, RawFetchResult.id == MarketIntradayBarLineage.raw_result_id)
                 .join(SourceRegistry, SourceRegistry.id == MarketIntradayBarLineage.source_id)
+                .options(defer(RawFetchResult.raw_text))
                 .filter(MarketIntradayBar.stock_id == instrument.symbol)
                 .filter(MarketIntradayBar.market == instrument.venue)
                 .filter(MarketIntradayBar.provider == provider)

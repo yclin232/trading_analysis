@@ -38,10 +38,10 @@ export function RevenueTrendChart({
   const t = useT();
   const chartPoints = points.slice(-36);
   const viewWidth = 860;
-  const viewHeight = 360;
-  const left = 64;
-  const right = 82;
-  const top = 54;
+  const viewHeight = 370;
+  const left = 72;
+  const right = 88;
+  const top = 56;
   const height = 240;
   const width = viewWidth - left - right;
   const revenueScale = minMax(chartPoints.map((point) => point.revenue));
@@ -79,27 +79,27 @@ export function RevenueTrendChart({
     hoverPoint?.growthPct === null || hoverPoint?.growthPct === undefined
       ? null
       : chartY(hoverPoint.growthPct, lineScale.min, lineScale.max, top, height);
-  const hoverTipWidth = 190;
-  const hoverTipHeight = 96;
+  const hoverTipWidth = 208;
+  const hoverTipHeight = 108;
   const hoverTipX = hoverX === null ? 0 : tooltipX(hoverX, hoverTipWidth, viewWidth);
   const hoverTipY = tooltipY(hoverGrowthY ?? hoverRevenueY ?? top + height / 2, hoverTipHeight, top, height);
 
   return (
     <div className="border border-omi-border-subtle bg-omi-surface px-4 py-5">
-      <div className="mb-3 flex items-center justify-center gap-4 text-xs">
-        <span className="inline-flex items-center gap-1 text-omi-text-muted">
+      <div className="mb-3 flex items-center justify-center gap-6 text-sm font-semibold">
+        <span className="inline-flex items-center gap-1.5 text-omi-text-strong">
           <span className="h-3 w-5 rounded-sm bg-omi-heat-border" />
           {revenueLabel}
         </span>
-        <span className="inline-flex items-center gap-1 text-omi-text-muted">
-          <span className="h-2 w-2 rounded-full border-2 border-omi-market-up-border" />
+        <span className="inline-flex items-center gap-1.5 text-omi-text-strong">
+          <span className="h-2.5 w-2.5 rounded-full border-2 border-omi-market-up-border" />
           {t("stockDetail.dataPanel.chart.yoyPct")}
         </span>
       </div>
 
       <svg
         viewBox={`0 0 ${viewWidth} ${viewHeight}`}
-        className="h-[360px] w-full"
+        className="h-[370px] w-full"
         onMouseMove={(event) => {
           const nextIndex = nearestChartIndex(event, chartPoints.length, left, width, viewWidth);
           setHoverIndex((current) => (current === nextIndex ? current : nextIndex));
@@ -110,10 +110,10 @@ export function RevenueTrendChart({
           const y = top + (tick / 3) * height;
           return <line key={tick} x1={left} x2={left + width} y1={y} y2={y} stroke={omiChartColors.grid} />;
         })}
-        <text x={left} y={20} className="fill-omi-text-muted text-[10px]">
+        <text x={left} y={22} className="fill-omi-text-strong text-[13px] font-semibold">
           {t("stockDetail.dataPanel.chart.revenueYi")}
         </text>
-        <text x={left + width + right} y={20} textAnchor="end" className="fill-omi-text-muted text-[10px]">
+        <text x={left + width + right} y={22} textAnchor="end" className="fill-omi-text-strong text-[13px] font-semibold">
           {t("stockDetail.dataPanel.chart.yoyPct")}
         </text>
         {chartPoints.map((point, index) => {
@@ -134,30 +134,30 @@ export function RevenueTrendChart({
           );
         })}
         {growthPath ? (
-          <path d={growthPath} fill="none" stroke={omiChartColors.growth} strokeWidth="2.4" strokeLinecap="round" />
+          <path d={growthPath} fill="none" stroke={omiChartColors.growth} strokeWidth="2.5" strokeLinecap="round" />
         ) : null}
         {chartPoints.map((point, index) => {
           if (point.growthPct === null || point.growthPct === undefined) return null;
           const x = chartX(index, chartPoints.length, left, width);
           const y = chartY(point.growthPct, lineScale.min, lineScale.max, top, height);
-          return <circle key={`${point.period}-growth`} cx={x} cy={y} r={3} fill={omiChartColors.surface} stroke={omiChartColors.growth} strokeWidth="2" />;
+          return <circle key={`${point.period}-growth`} cx={x} cy={y} r={3.5} fill={omiChartColors.surface} stroke={omiChartColors.growth} strokeWidth="2" />;
         })}
-        <text x={left - 4} y={top + 4} textAnchor="end" className="fill-omi-text-muted text-[10px]">
+        <text x={left - 6} y={top + 4} textAnchor="end" className="fill-omi-text text-[12px] font-medium tabular-nums">
           {formatRevenueYiValue(revenueScale.max)}
         </text>
-        <text x={left - 4} y={top + height} textAnchor="end" className="fill-omi-text-muted text-[10px]">
+        <text x={left - 6} y={top + height} textAnchor="end" className="fill-omi-text text-[12px] font-medium tabular-nums">
           {formatRevenueYiValue(revenueScale.min)}
         </text>
-        <text x={left + width + 4} y={top + 4} className="fill-omi-text-muted text-[10px]">
+        <text x={left + width + 6} y={top + 4} className="fill-omi-text text-[12px] font-medium tabular-nums">
           {formatPct(lineScale.max)}
         </text>
-        <text x={left + width + 4} y={top + height} className="fill-omi-text-muted text-[10px]">
+        <text x={left + width + 6} y={top + height} className="fill-omi-text text-[12px] font-medium tabular-nums">
           {formatPct(lineScale.min)}
         </text>
-        <text x={left} y={top + height + 28} className="fill-omi-text-muted text-[10px]">
+        <text x={left} y={top + height + 28} className="fill-omi-text-muted text-[12px] font-medium tabular-nums">
           {chartPoints[0]?.label}
         </text>
-        <text x={left + width} y={top + height + 28} textAnchor="end" className="fill-omi-text-muted text-[10px]">
+        <text x={left + width} y={top + height + 28} textAnchor="end" className="fill-omi-text-muted text-[12px] font-medium tabular-nums">
           {chartPoints[chartPoints.length - 1]?.label}
         </text>
         {hoverPoint && hoverX !== null ? (
@@ -170,30 +170,30 @@ export function RevenueTrendChart({
               stroke={omiChartColors.crosshair}
               strokeDasharray="4 4"
             />
-            <rect x={hoverX - 34} y={top + height + 34} width={68} height={22} rx={3} fill={omiChartColors.tooltip} />
-            <text x={hoverX} y={top + height + 49} textAnchor="middle" className="fill-omi-surface text-[11px] font-semibold">
+            <rect x={hoverX - 40} y={top + height + 32} width={80} height={26} rx={4} fill={omiChartColors.tooltip} />
+            <text x={hoverX} y={top + height + 49} textAnchor="middle" className="fill-omi-surface text-[12px] font-bold tabular-nums">
               {hoverPoint.label}
             </text>
             <g transform={`translate(${hoverTipX} ${hoverTipY})`}>
               <rect width={hoverTipWidth} height={hoverTipHeight} rx={4} fill={omiChartColors.surface} stroke={omiChartColors.tooltipBorder} />
-              <text x={12} y={20} className="fill-omi-text-muted text-[12px] font-semibold">
+              <text x={14} y={22} className="fill-omi-text-strong text-[13px] font-bold tabular-nums">
                 {hoverPoint.label}
               </text>
-              <rect x={12} y={34} width={10} height={10} fill={omiChartColors.heatMuted} />
-              <text x={30} y={43} className="fill-omi-text-muted text-[12px]">
+              <rect x={14} y={38} width={10} height={10} fill={omiChartColors.heatMuted} />
+              <text x={32} y={47} className="fill-omi-text-muted text-[13px]">
                 {t("stockDetail.dataPanel.chart.revenueYi")}
               </text>
-              <text x={hoverTipWidth - 12} y={43} textAnchor="end" className="fill-omi-text text-[12px] font-semibold">
+              <text x={hoverTipWidth - 14} y={47} textAnchor="end" className="fill-omi-text text-[13px] font-bold tabular-nums">
                 {formatRevenueYiValue(hoverPoint.revenue)}
               </text>
-              <circle cx={17} cy={62} r={4} fill={omiChartColors.growth} />
-              <text x={30} y={66} className="fill-omi-text-muted text-[12px]">
+              <circle cx={19} cy={72} r={5} fill={omiChartColors.growth} />
+              <text x={32} y={76} className="fill-omi-text-muted text-[13px]">
                 {t("stockDetail.dataPanel.columns.yoy")}
               </text>
-              <text x={hoverTipWidth - 12} y={66} textAnchor="end" className={`text-[12px] font-semibold ${valueTone(hoverPoint.growthPct).replace("text-", "fill-")}`}>
+              <text x={hoverTipWidth - 14} y={76} textAnchor="end" className={`text-[13px] font-bold tabular-nums ${valueTone(hoverPoint.growthPct).replace("text-", "fill-")}`}>
                 {formatPct(hoverPoint.growthPct)}
               </text>
-              <text x={30} y={86} className="fill-omi-text-muted text-[11px]">
+              <text x={32} y={98} className="fill-omi-text-muted text-[12px]">
                 {t("stockDetail.dataPanel.chart.monthCount", {
                   count: hoverPoint.monthCount,
                 })}
@@ -218,10 +218,10 @@ export function EarningsTrendChart({
   const t = useT();
   const chartPoints = points.slice(-36);
   const viewWidth = 860;
-  const viewHeight = 360;
-  const left = 64;
-  const right = 82;
-  const top = 54;
+  const viewHeight = 370;
+  const left = 72;
+  const right = 88;
+  const top = 56;
   const height = 240;
   const width = viewWidth - left - right;
   const epsScale = minMax(chartPoints.map((point) => point.eps));
@@ -257,27 +257,27 @@ export function EarningsTrendChart({
     hoverPoint?.growthPct === null || hoverPoint?.growthPct === undefined
       ? null
       : chartY(hoverPoint.growthPct, lineScale.min, lineScale.max, top, height);
-  const hoverTipWidth = 190;
-  const hoverTipHeight = 112;
+  const hoverTipWidth = 208;
+  const hoverTipHeight = 120;
   const hoverTipX = hoverX === null ? 0 : tooltipX(hoverX, hoverTipWidth, viewWidth);
   const hoverTipY = tooltipY(hoverGrowthY ?? hoverEpsY ?? top + height / 2, hoverTipHeight, top, height);
 
   return (
     <div className="border border-omi-border-subtle bg-omi-surface px-4 py-5">
-      <div className="mb-3 flex items-center justify-center gap-4 text-xs">
-        <span className="inline-flex items-center gap-1 text-omi-text-muted">
+      <div className="mb-3 flex items-center justify-center gap-6 text-sm font-semibold">
+        <span className="inline-flex items-center gap-1.5 text-omi-text-strong">
           <span className="h-3 w-5 rounded-sm bg-omi-heat-border" />
           {earningsLabel}
         </span>
-        <span className="inline-flex items-center gap-1 text-omi-text-muted">
-          <span className="h-2 w-2 rounded-full border-2 border-omi-market-up-border" />
+        <span className="inline-flex items-center gap-1.5 text-omi-text-strong">
+          <span className="h-2.5 w-2.5 rounded-full border-2 border-omi-market-up-border" />
           {t("stockDetail.dataPanel.chart.yoyPct")}
         </span>
       </div>
 
       <svg
         viewBox={`0 0 ${viewWidth} ${viewHeight}`}
-        className="h-[360px] w-full"
+        className="h-[370px] w-full"
         onMouseMove={(event) => {
           const nextIndex = nearestChartIndex(event, chartPoints.length, left, width, viewWidth);
           setHoverIndex((current) => (current === nextIndex ? current : nextIndex));
@@ -288,10 +288,10 @@ export function EarningsTrendChart({
           const y = top + (tick / 3) * height;
           return <line key={tick} x1={left} x2={left + width} y1={y} y2={y} stroke={omiChartColors.grid} />;
         })}
-        <text x={left} y={20} className="fill-omi-text-muted text-[10px]">
+        <text x={left} y={22} className="fill-omi-text-strong text-[13px] font-semibold">
           {t("stockDetail.dataPanel.columns.epsNtd")}
         </text>
-        <text x={left + width + right} y={20} textAnchor="end" className="fill-omi-text-muted text-[10px]">
+        <text x={left + width + right} y={22} textAnchor="end" className="fill-omi-text-strong text-[13px] font-semibold">
           {t("stockDetail.dataPanel.chart.yoyPct")}
         </text>
         {chartPoints.map((point, index) => {
@@ -312,30 +312,30 @@ export function EarningsTrendChart({
           );
         })}
         {growthPath ? (
-          <path d={growthPath} fill="none" stroke={omiChartColors.growth} strokeWidth="2.4" strokeLinecap="round" />
+          <path d={growthPath} fill="none" stroke={omiChartColors.growth} strokeWidth="2.5" strokeLinecap="round" />
         ) : null}
         {chartPoints.map((point, index) => {
           if (point.growthPct === null || point.growthPct === undefined) return null;
           const x = chartX(index, chartPoints.length, left, width);
           const y = chartY(point.growthPct, lineScale.min, lineScale.max, top, height);
-          return <circle key={`${point.period}-growth`} cx={x} cy={y} r={3} fill={omiChartColors.surface} stroke={omiChartColors.growth} strokeWidth="2" />;
+          return <circle key={`${point.period}-growth`} cx={x} cy={y} r={3.5} fill={omiChartColors.surface} stroke={omiChartColors.growth} strokeWidth="2" />;
         })}
-        <text x={left - 4} y={top + 4} textAnchor="end" className="fill-omi-text-muted text-[10px]">
+        <text x={left - 6} y={top + 4} textAnchor="end" className="fill-omi-text text-[12px] font-medium tabular-nums">
           {formatPrice(epsScale.max)}
         </text>
-        <text x={left - 4} y={top + height} textAnchor="end" className="fill-omi-text-muted text-[10px]">
+        <text x={left - 6} y={top + height} textAnchor="end" className="fill-omi-text text-[12px] font-medium tabular-nums">
           {formatPrice(epsScale.min)}
         </text>
-        <text x={left + width + 4} y={top + 4} className="fill-omi-text-muted text-[10px]">
+        <text x={left + width + 6} y={top + 4} className="fill-omi-text text-[12px] font-medium tabular-nums">
           {formatPct(lineScale.max)}
         </text>
-        <text x={left + width + 4} y={top + height} className="fill-omi-text-muted text-[10px]">
+        <text x={left + width + 6} y={top + height} className="fill-omi-text text-[12px] font-medium tabular-nums">
           {formatPct(lineScale.min)}
         </text>
-        <text x={left} y={top + height + 28} className="fill-omi-text-muted text-[10px]">
+        <text x={left} y={top + height + 28} className="fill-omi-text-muted text-[12px] font-medium tabular-nums">
           {chartPoints[0]?.label}
         </text>
-        <text x={left + width} y={top + height + 28} textAnchor="end" className="fill-omi-text-muted text-[10px]">
+        <text x={left + width} y={top + height + 28} textAnchor="end" className="fill-omi-text-muted text-[12px] font-medium tabular-nums">
           {chartPoints[chartPoints.length - 1]?.label}
         </text>
         {hoverPoint && hoverX !== null ? (
@@ -348,33 +348,33 @@ export function EarningsTrendChart({
               stroke={omiChartColors.crosshair}
               strokeDasharray="4 4"
             />
-            <rect x={hoverX - 34} y={top + height + 34} width={68} height={22} rx={3} fill={omiChartColors.tooltip} />
-            <text x={hoverX} y={top + height + 49} textAnchor="middle" className="fill-omi-surface text-[11px] font-semibold">
+            <rect x={hoverX - 40} y={top + height + 32} width={80} height={26} rx={4} fill={omiChartColors.tooltip} />
+            <text x={hoverX} y={top + height + 49} textAnchor="middle" className="fill-omi-surface text-[12px] font-bold tabular-nums">
               {hoverPoint.label}
             </text>
             <g transform={`translate(${hoverTipX} ${hoverTipY})`}>
               <rect width={hoverTipWidth} height={hoverTipHeight} rx={4} fill={omiChartColors.surface} stroke={omiChartColors.tooltipBorder} />
-              <text x={12} y={20} className="fill-omi-text-muted text-[12px] font-semibold">
+              <text x={14} y={22} className="fill-omi-text-strong text-[13px] font-bold tabular-nums">
                 {hoverPoint.label}
               </text>
-              <rect x={12} y={34} width={10} height={10} fill={omiChartColors.heatMuted} />
-              <text x={30} y={43} className="fill-omi-text-muted text-[12px]">
+              <rect x={14} y={38} width={10} height={10} fill={omiChartColors.heatMuted} />
+              <text x={32} y={47} className="fill-omi-text-muted text-[13px]">
                 EPS
               </text>
-              <text x={hoverTipWidth - 12} y={43} textAnchor="end" className="fill-omi-text text-[12px] font-semibold">
+              <text x={hoverTipWidth - 14} y={47} textAnchor="end" className="fill-omi-text text-[13px] font-bold tabular-nums">
                 {formatPrice(hoverPoint.eps)}
               </text>
-              <circle cx={17} cy={62} r={4} fill={omiChartColors.growth} />
-              <text x={30} y={66} className="fill-omi-text-muted text-[12px]">
+              <circle cx={19} cy={72} r={5} fill={omiChartColors.growth} />
+              <text x={32} y={76} className="fill-omi-text-muted text-[13px]">
                 {t("stockDetail.dataPanel.columns.yoy")}
               </text>
-              <text x={hoverTipWidth - 12} y={66} textAnchor="end" className={`text-[12px] font-semibold ${valueTone(hoverPoint.growthPct).replace("text-", "fill-")}`}>
+              <text x={hoverTipWidth - 14} y={76} textAnchor="end" className={`text-[13px] font-bold tabular-nums ${valueTone(hoverPoint.growthPct).replace("text-", "fill-")}`}>
                 {formatPct(hoverPoint.growthPct)}
               </text>
-              <text x={30} y={86} className="fill-omi-text-muted text-[11px]">
+              <text x={32} y={98} className="fill-omi-text-muted text-[12px]">
                 ROE {formatRatioPct(hoverPoint.roe)}
               </text>
-              <text x={hoverTipWidth - 12} y={86} textAnchor="end" className="fill-omi-text-muted text-[11px]">
+              <text x={hoverTipWidth - 14} y={98} textAnchor="end" className="fill-omi-text-muted text-[12px]">
                 ROA {formatRatioPct(hoverPoint.roa)}
               </text>
             </g>

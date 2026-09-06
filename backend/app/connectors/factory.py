@@ -9,7 +9,7 @@ class UnsupportedConnectorError(Exception):
 
 
 def get_connector(source: SourceRegistry) -> BaseConnector:
-    if source.source_type in {"api", "rss", "feed"}:
+    if source.source_type in {"api", "rss", "feed", "http_api"}:
         return HttpAPIConnector()
 
     if source.source_type in {"api_bundle", "http_bundle"}:

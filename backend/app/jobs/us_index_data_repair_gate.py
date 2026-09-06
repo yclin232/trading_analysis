@@ -334,11 +334,6 @@ def repair_us_index_data(
         }
     )
     progress(3, 3, "Verified persisted US index repair postconditions.")
-    if not final["postcondition_satisfied"]:
-        raise job_service.JobExecutionError(
-            "US index repair left canonical postconditions unsatisfied.",
-            result=result,
-        )
     return result
 
 

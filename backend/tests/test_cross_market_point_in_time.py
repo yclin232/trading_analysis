@@ -18,7 +18,7 @@ from app.market.cross_market.snapshot_store import (
     load_latest_cross_market_context_snapshots,
     materialize_cross_market_context_snapshot,
 )
-from backend.tests.test_cross_market_context import (
+from tests.test_cross_market_context import (
     ADR_TRADE_DATE,
     DECISION_AT,
     MATERIALIZED_AT,

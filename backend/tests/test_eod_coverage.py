@@ -904,3 +904,81 @@ def test_scheduler_decision_recomputes_persisted_coverage_instead_of_trusting_ch
         return_value=EXPECTED,
     ):
         assert should_enqueue_eod_reconcile(db, market="TW") is True
+
+
+def test_tw_official_bulk_reconcile_succeeds_when_expected_date_observed_with_partial_stocks(
+    db: Session,
+) -> None:
+    source, raw = _source_and_raw(db)
+    db.add_all(
+        [
+            StockMaster(stock_id="1101", market="TWSE", instrument_type="stock"),
+            StockMaster(stock_id="1102", market="TWSE", instrument_type="stock"),  # illiquid, no close
+            StockMaster(stock_id="6488", market="TPEX", instrument_type="stock"),
+        ]
+    )
+    db.flush()
+
+    def fake_venue_refresher(*, db: Session, venue: str, trade_date: date):
+        if venue == "TWSE":
+            db.add_all(
+                [
+                    MarketDailyPrice(
+                        source_id=source.id,
+                        raw_result_id=raw.id,
+                        stock_id="1101",
+                        trade_date=trade_date,
+                        close_price=50.0,
+                    ),
+                    MarketDailyPrice(
+                        source_id=source.id,
+                        raw_result_id=raw.id,
+                        stock_id="1102",
+                        trade_date=trade_date,
+                        close_price=None,  # partial
+                    ),
+                ]
+            )
+        elif venue == "TPEX":
+            db.add(
+                MarketDailyPrice(
+                    source_id=source.id,
+                    raw_result_id=raw.id,
+                    stock_id="6488",
+                    trade_date=trade_date,
+                    close_price=120.0,
+                )
+            )
+        db.commit()
+        return {
+            "fetch_status": "success",
+            "parse_status": "success",
+            "parsed_count": 2 if venue == "TWSE" else 1,
+            "data_quality_status": "valid",
+            "raw_result_id": raw.id,
+            "fetched_at": datetime(2026, 8, 21, 8, 0, tzinfo=timezone.utc),
+            "is_duplicate": False,
+            "replaced_trade_dates": [trade_date],
+            "error_message": None,
+        }
+
+    with patch(
+        "app.market_data.eod_coverage.taiwan_bulk_eod_refresh_window",
+        return_value=(True, None, "test_completed_session"),
+    ):
+        result = reconcile_eod_coverage(
+            db,
+            market="TW",
+            expected_trade_date=EXPECTED,
+            repair=True,
+            taiwan_venue_refresher=fake_venue_refresher,
+        )
+
+    assert result["status"] == "completed"
+    assert result["postcondition_met"] is True
+    assert result["current_count"] == 2
+    assert result["partial_count"] == 1
+    assert result["universe_count"] == 3
+    assert result["checkpoint"]["repair_status"] == "complete"
+    assert should_enqueue_eod_reconcile(db, market="TW", expected_trade_date=EXPECTED) is False
+

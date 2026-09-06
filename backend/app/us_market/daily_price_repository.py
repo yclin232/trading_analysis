@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 
 from pydantic import ValidationError
 from sqlalchemy import or_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, defer
 
 from app.db.models import RawFetchResult, SourceRegistry, USDailyPrice
 from app.market_data.candidate_repository import (
@@ -158,6 +158,7 @@ class USDailyBarRepository:
             self._db.query(USDailyPrice, RawFetchResult, SourceRegistry)
             .outerjoin(RawFetchResult, RawFetchResult.id == USDailyPrice.raw_result_id)
             .outerjoin(SourceRegistry, SourceRegistry.id == USDailyPrice.source_id)
+            .options(defer(RawFetchResult.raw_text))
             .filter(USDailyPrice.symbol.in_(symbols))
             .filter(USDailyPrice.trade_date >= query.start_date)
             .filter(USDailyPrice.trade_date <= query.end_date)

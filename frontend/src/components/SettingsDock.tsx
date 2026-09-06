@@ -503,29 +503,30 @@ function localizeRefreshMarketSections(t: TranslationFunction): RefreshMarketSec
 }
 
 function readStoredColorSetting(): ColorSetting {
-  if (typeof window === "undefined") return "light";
+  if (typeof window === "undefined") return "dark";
 
   try {
     const value = window.localStorage.getItem(SETTINGS_COLOR_STORAGE_KEY);
-    if (value === "high-contrast") return "dark";
+    if (value === "light") return "light";
+    if (value === "dark" || value === "high-contrast") return "dark";
     return colorSettingChoices.includes(value as ColorSetting)
       ? (value as ColorSetting)
-      : "light";
+      : "dark";
   } catch {
-    return "light";
+    return "dark";
   }
 }
 
 function readStoredHighContrastSetting() {
-  if (typeof window === "undefined") return false;
+  if (typeof window === "undefined") return true;
 
   try {
     const explicit = window.localStorage.getItem(SETTINGS_HIGH_CONTRAST_STORAGE_KEY);
-    if (explicit === "true") return true;
     if (explicit === "false") return false;
-    return window.localStorage.getItem(SETTINGS_COLOR_STORAGE_KEY) === "high-contrast";
+    if (explicit === "true") return true;
+    return true;
   } catch {
-    return false;
+    return true;
   }
 }
 

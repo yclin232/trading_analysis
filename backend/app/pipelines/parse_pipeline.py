@@ -432,7 +432,17 @@ def parse_twse_margin_trading_raw_result(db: Session, raw_result_id: int) -> dic
     parsed_rows, skipped_count = parse_twse_margin_trading_raw(raw_result)
 
     if not parsed_rows:
-        raise ValueError("No valid rows parsed from raw result.")
+        return {
+            "raw_result_id": raw_result.id,
+            "source_id": raw_result.source_id,
+            "parser_type": "twse_margin_trading",
+            "status": "success",
+            "parsed_count": 0,
+            "skipped_count": skipped_count,
+            "inserted_count": 0,
+            "replaced_trade_dates": [],
+            "message": "TWSE margin trading payload contains no data rows (empty table or before release).",
+        }
 
     trade_dates = sorted({row["trade_date"] for row in parsed_rows})
 
@@ -471,7 +481,17 @@ def parse_tpex_margin_trading_raw_result(db: Session, raw_result_id: int) -> dic
     parsed_rows, skipped_count = parse_tpex_margin_trading_raw(raw_result)
 
     if not parsed_rows:
-        raise ValueError("No valid rows parsed from raw result.")
+        return {
+            "raw_result_id": raw_result.id,
+            "source_id": raw_result.source_id,
+            "parser_type": "tpex_margin_trading",
+            "status": "success",
+            "parsed_count": 0,
+            "skipped_count": skipped_count,
+            "inserted_count": 0,
+            "replaced_trade_dates": [],
+            "message": "TPEx margin trading payload contains no data rows (empty table or before release).",
+        }
 
     trade_dates = sorted({row["trade_date"] for row in parsed_rows})
 

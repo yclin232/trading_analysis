@@ -288,12 +288,25 @@ def _daily_points_with_platform(
     return [], None, None
 
 
+_INTERNAL_PIPELINE_TOKENS: set[str] = {
+    "BAR_SERIES_COMPOSED_FROM_MULTIPLE_CANDIDATES",
+    "OFFICIAL_DAILY_SERIES_RECONCILED",
+    "OFFICIAL_DAILY_SAME_DATE_CONFLICT_RESOLVED",
+    "PRE_RESOLUTION_SATISFIED",
+    "PERSISTENCE_NOT_REQUIRED",
+    "ACQUISITION_NOT_ATTEMPTED",
+    "READ_POLICY_FORBIDS_ACQUISITION",
+    "TW_INTRADAY_CANONICAL_CACHE_MISSING",
+}
+
+
 def _platform_quality(result: MarketDataResultV1 | None) -> tuple[str, list[str]]:
     if result is None:
         return "legacy", ["TW_DATA_CORE_INSTRUMENT_METADATA_UNAVAILABLE"]
-    warnings = list(result.limitations)
-    warnings.extend(result.resolved.health.limitations)
-    warnings.extend(item.reason_code for item in result.candidate_rejections)
+    raw_warnings: list[str] = list(result.limitations)
+    raw_warnings.extend(result.resolved.health.limitations)
+    raw_warnings.extend(item.reason_code for item in result.candidate_rejections)
+    warnings = [w for w in raw_warnings if w and w not in _INTERNAL_PIPELINE_TOKENS]
     dataset_status = result.dataset_health.status if result.dataset_health else None
     if dataset_status is DatasetHealthStatus.PARTIAL:
         quality = "partial"

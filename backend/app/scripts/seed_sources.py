@@ -25,7 +25,7 @@ DEFAULT_SOURCES = [
         "source_name": "TWSE Listed Company Profile",
         "source_type": "api",
         "category": "company_profile",
-        "endpoint_url": "https://mopsfin.twse.com.tw/opendata/t187ap03_L.csv",
+        "endpoint_url": "https://openapi.twse.com.tw/v1/opendata/t187ap03_L",
         "enabled": True,
         "fetch_interval_minutes": 43200,
         "priority": 20,

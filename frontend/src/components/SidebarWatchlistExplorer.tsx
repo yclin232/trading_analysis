@@ -1269,22 +1269,19 @@ export default function SidebarWatchlistExplorer({
     onExplorerDataChanged?.(treeData, itemData);
 
     const flattened = flattenGroups(treeData);
-    const selectedStillExists =
-      selectedGroupId !== null &&
-      flattened.some((group) => group.id === selectedGroupId);
+    const resolvedGroup =
+      (selectedGroupId !== null
+        ? flattened.find((group) => group.id === selectedGroupId)
+        : null) ?? (options?.keepSelection === false ? null : flattened[0] ?? null);
 
-    if (options?.keepSelection && selectedStillExists) {
-      const currentGroup =
-        flattened.find((group) => group.id === selectedGroupId) ?? null;
-      setRenameValue(currentGroup?.group_name ?? "");
+    if (resolvedGroup) {
+      setRenameValue(resolvedGroup.group_name);
       setExpandedIds((previous) => {
-        if (selectedGroupId === null) return previous;
-
         const next = new Set(previous);
-        next.add(selectedGroupId);
+        next.add(resolvedGroup.id);
         return next;
       });
-      return currentGroup;
+      return resolvedGroup;
     }
 
     setRenameValue("");
@@ -1298,6 +1295,9 @@ export default function SidebarWatchlistExplorer({
 
     try {
       const nextGroup = await reloadExplorerData({ keepSelection: true });
+      if (selectedGroupId === null && nextGroup) {
+        onSelectGroup(nextGroup);
+      }
       await onChanged(nextGroup?.id ?? selectedGroupId);
       setMessage({ type: "success", text: t("watchlist.messages.reloadSuccess") });
     } catch (error) {
@@ -1323,6 +1323,9 @@ export default function SidebarWatchlistExplorer({
       const nextGroup = await reloadExplorerData({
         keepSelection: options?.keepSelection ?? true,
       });
+      if (selectedGroupId === null && nextGroup) {
+        onSelectGroup(nextGroup);
+      }
       await onChanged(nextGroup?.id ?? null);
       setMessage({ type: "success", text: successText });
     } catch (error) {
@@ -1339,15 +1342,33 @@ export default function SidebarWatchlistExplorer({
     const timer = window.setTimeout(() => {
       setTree(initialTree);
       setItems(initialItems);
-      setExpandedIds(new Set());
+      if (selectedGroupId !== null) {
+        setExpandedIds((previous) => new Set([...previous, selectedGroupId]));
+      }
     }, 0);
 
     return () => window.clearTimeout(timer);
-  }, [initialTree, initialItems]);
+  }, [initialTree, initialItems, selectedGroupId]);
+
+  useEffect(() => {
+    if (selectedGroupId !== null) {
+      setExpandedIds((previous) => {
+        if (previous.has(selectedGroupId)) return previous;
+        const next = new Set(previous);
+        next.add(selectedGroupId);
+        return next;
+      });
+    }
+  }, [selectedGroupId]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      reloadExplorerData({ keepSelection: selectedGroupId !== null }).catch((error) => {
+      reloadExplorerData({ keepSelection: selectedGroupId !== null }).then((nextGroup) => {
+        if (selectedGroupId === null && nextGroup) {
+          onSelectGroup(nextGroup);
+          void onChanged(nextGroup.id);
+        }
+      }).catch((error) => {
         setMessage({
           type: "error",
           text: error instanceof Error ? error.message : t("watchlist.messages.readError"),
@@ -1847,9 +1868,10 @@ export default function SidebarWatchlistExplorer({
       return;
     }
 
+    let createdItem: WatchlistItemRead | null = null;
     await runAction(
       async () => {
-        await requestJson<WatchlistItemRead>("/api/watchlists/items", {
+        createdItem = await requestJson<WatchlistItemRead>("/api/watchlists/items", {
           method: "POST",
           body: JSON.stringify({
             group_id: selectedGroupId,
@@ -1868,6 +1890,10 @@ export default function SidebarWatchlistExplorer({
       t("watchlist.messages.addedStock"),
       { keepSelection: true }
     );
+    if (createdItem) {
+      const item = createdItem as WatchlistItemRead;
+      onSelectStock(item.stock_id, item.stock_name, item.market, item.instrument_type);
+    }
   }
 
   async function deleteStockItem(item: WatchlistItemRead) {

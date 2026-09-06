@@ -294,7 +294,7 @@ export function useLightweightChartEngine({
       layout: {
         background: { type: ColorType.Solid, color: omiChartColors.surface },
         textColor: omiChartColors.neutralMuted,
-        fontSize: 12,
+        fontSize: 13,
         fontFamily:
           'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
         attributionLogo: false,

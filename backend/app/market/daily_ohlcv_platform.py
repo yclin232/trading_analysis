@@ -321,6 +321,44 @@ def read_taiwan_official_daily(
             repository
         ),
     )
+    if len(result.resolved.bars) < min(limit, 60):
+        from app.market.stock_selection_refresh import _ensure_current_month_daily_prices
+        try:
+            _ensure_current_month_daily_prices(
+                db=db,
+                stock_id=normalized_stock_id,
+                target_date=effective_to_date,
+                sleep_seconds=0.05,
+                min_required_bars=60,
+                historical_lookback_days=240,
+            )
+            db.expire_all()
+            repository = TaiwanOfficialDailyBarRepository(
+                db,
+                available_at=effective_requested_at,
+            )
+            effective_from_date = from_date
+            if effective_from_date is None:
+                effective_from_date = repository.latest_candidate_start_date(
+                    instrument=instrument,
+                    end_date=effective_to_date,
+                    max_rows=limit,
+                ) or effective_to_date
+            requirement = build_taiwan_daily_cache_requirement(
+                instrument=instrument,
+                from_date=effective_from_date,
+                to_date=effective_to_date,
+                requested_at=effective_requested_at,
+                max_rows=limit,
+            )
+            result = MarketDataGateway().resolve_bars(
+                requirement,
+                reader=TaiwanCompletedDailyCandidateReader(
+                    repository
+                ),
+            )
+        except Exception:
+            pass
     composition_limitations: list[str] = []
     if "BAR_SERIES_COMPOSED_FROM_MULTIPLE_CANDIDATES" in result.limitations:
         composition_limitations.append("OFFICIAL_DAILY_SERIES_RECONCILED")

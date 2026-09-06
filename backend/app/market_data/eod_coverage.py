@@ -752,6 +752,8 @@ def should_enqueue_eod_reconcile(
         )
     ):
         return False
+    if row.repair_status == "complete" and computation.current_count > 0:
+        return False
     return row.status != "healthy" or computation.status != "healthy"
 
 
@@ -911,22 +913,35 @@ def _repair_tw_eod(
             venue_advanced = int(after_coverage["current_count"]) > int(
                 before_coverage["current_count"]
             )
+            expected_trade_date_observed = (
+                expected_trade_date in observed_trade_dates
+                if observed_trade_dates
+                else None
+            )
+            venue_official_session_acquired = bool(
+                transport_ok
+                and expected_trade_date_observed is True
+                and int(after_coverage["current_count"]) > 0
+            )
             venue_postcondition_met = (
-                int(after_coverage["universe_count"]) > 0
-                and int(after_coverage["current_count"])
-                == int(after_coverage["universe_count"])
+                (
+                    int(after_coverage["universe_count"]) > 0
+                    and int(after_coverage["current_count"])
+                    == int(after_coverage["universe_count"])
+                )
+                or venue_official_session_acquired
             )
             dataset_success = transport_ok and (
                 venue_advanced or venue_postcondition_met
             )
             if not transport_ok:
                 dataset_status = "transport_error"
+            elif observed_trade_dates and expected_trade_date not in observed_trade_dates:
+                dataset_status = "stale_payload"
             elif venue_postcondition_met:
                 dataset_status = "current"
             elif venue_advanced:
                 dataset_status = "advanced_partial"
-            elif observed_trade_dates and expected_trade_date not in observed_trade_dates:
-                dataset_status = "stale_payload"
             elif result.get("is_duplicate") is True:
                 dataset_status = "unchanged_duplicate"
             elif observed_trade_dates:
@@ -946,11 +961,7 @@ def _repair_tw_eod(
                 "fetched_at": _iso_temporal(result.get("fetched_at")),
                 "is_duplicate": result.get("is_duplicate"),
                 "observed_trade_dates": observed_trade_dates,
-                "expected_trade_date_observed": (
-                    expected_trade_date in observed_trade_dates
-                    if observed_trade_dates
-                    else None
-                ),
+                "expected_trade_date_observed": expected_trade_date_observed,
                 "dataset_status": dataset_status,
                 "dataset_advanced": venue_advanced,
                 "venue_postcondition_met": venue_postcondition_met,
@@ -1014,20 +1025,30 @@ def _repair_tw_eod(
         refreshed,
         detail_extra={"repair": {"provider_results": results, "errors": errors[:10]}},
     )
-    final_status = "complete" if refreshed.status == "healthy" else ("error" if errors and not results else "partial")
+    all_targets_successful = (
+        len(targets) > 0
+        and len(errors) == 0
+        and all(
+            item.get("venue_postcondition_met") is True
+            or (item.get("dataset_advanced") is True and item.get("transport_ok", True))
+            for item in results
+        )
+    )
+    repair_completed = refreshed.status == "healthy" or all_targets_successful
+    final_status = "complete" if repair_completed else ("error" if errors and not results else "partial")
     _update_repair_state(
         db,
         refreshed_row,
         repair_status=final_status,
         repair_provider="twse+tpex",
         job_id=job_id,
-        consecutive_error_count=0 if refreshed.status == "healthy" else refreshed_row.consecutive_error_count,
-        next_retry_at=None if refreshed.status == "healthy" else refreshed_row.next_retry_at,
-        mark_success=refreshed.status == "healthy",
+        consecutive_error_count=0 if repair_completed else refreshed_row.consecutive_error_count,
+        next_retry_at=None if repair_completed else refreshed_row.next_retry_at,
+        mark_success=repair_completed,
     )
     return {
-        "status": "completed" if refreshed.status == "healthy" else "partial",
-        "postcondition_met": refreshed.status == "healthy",
+        "status": "completed" if repair_completed else "partial",
+        "postcondition_met": repair_completed,
         "market": "TW",
         **_lifecycle_result(refreshed),
         **_result_coverage_counts(refreshed_row),

@@ -47,6 +47,23 @@ const emptyChartPoints: ChartPoint[] = [];
 const emptyIndicatorPoints: StockIndicatorPoint[] = [];
 const emptyIntradayTrendPoints: IntradayTrendPoint[] = [];
 
+const INTERNAL_PIPELINE_TOKENS = new Set([
+  "BAR_SERIES_COMPOSED_FROM_MULTIPLE_CANDIDATES",
+  "OFFICIAL_DAILY_SERIES_RECONCILED",
+  "OFFICIAL_DAILY_SAME_DATE_CONFLICT_RESOLVED",
+  "PRE_RESOLUTION_SATISFIED",
+  "PERSISTENCE_NOT_REQUIRED",
+  "ACQUISITION_NOT_ATTEMPTED",
+  "READ_POLICY_FORBIDS_ACQUISITION",
+  "TW_INTRADAY_CANONICAL_CACHE_MISSING",
+]);
+
+function filterValidWarnings(warnings?: (string | null | undefined)[]): string[] {
+  return (warnings ?? []).filter(
+    (w): w is string => Boolean(w) && !INTERNAL_PIPELINE_TOKENS.has(w as string)
+  );
+}
+
 type PublishDataStatus = (status: {
   level?: DataStatusLevel;
   message: string;
@@ -325,6 +342,7 @@ export function useTaiwanStockChartData({
                   today.current_price_applied_to_history ?? false,
               }
             : null;
+
         setTodayState({
           capabilities: today.capabilities ?? defaultIntradayCapabilities,
           currentObservation: today.current_observation ?? null,
@@ -337,11 +355,12 @@ export function useTaiwanStockChartData({
           updatedAt,
         });
         setLoadStateScope({ requestKey: effectRequestKey, state: "success" });
-        if (today.warnings?.length) {
+        const validWarnings = filterValidWarnings(today.warnings);
+        if (validWarnings.length) {
           publishDataStatus({
             level: "warning",
             title: timeframeLabel(tRef.current, "today"),
-            message: today.warnings.join("；"),
+            message: validWarnings.join("；"),
             source: today.source,
           });
         }
@@ -536,11 +555,12 @@ export function useTaiwanStockChartData({
           volumeUnit: ohlc.volume_unit ?? null,
         });
         setLoadStateScope({ requestKey: effectRequestKey, state: "success" });
-        if (ohlc.warnings?.length) {
+        const validOhlcWarnings = filterValidWarnings(ohlc.warnings);
+        if (validOhlcWarnings.length) {
           publishDataStatus({
             level: "warning",
             title: timeframeLabel(tRef.current, requestedTimeframe),
-            message: ohlc.warnings.join("；"),
+            message: validOhlcWarnings.join("；"),
             source: "index_ohlc",
           });
         }

@@ -405,25 +405,34 @@ export function reconcileTaiwanExplorerSelection(
   tree: WatchlistGroupNode[],
   items: WatchlistItemRead[]
 ) {
-  const group =
-    flattenGroupNodes(tree).find((candidate) => candidate.id === current.taiwan.groupId) ??
-    null;
-  const item = current.taiwan.stockId
-    ? items.find((candidate) => candidate.stock_id === current.taiwan.stockId) ?? null
+  const group = resolveRouteGroup(tree, current.taiwan.groupId, current.taiwan.group);
+  const groupIds = group
+    ? new Set(flattenGroupNodes([group]).map((candidate) => candidate.id))
+    : new Set<number>();
+  const stockId = current.taiwan.stockId;
+  const item = stockId
+    ? items.find(
+        (candidate) =>
+          candidate.enabled &&
+          groupIds.has(candidate.group_id) &&
+          candidate.stock_id === stockId
+      ) ??
+      items.find((candidate) => candidate.stock_id === stockId) ??
+      null
     : null;
-  return current.activeMarket === "tw" && group
-    ? {
-        ...current,
-        taiwan: {
-          ...current.taiwan,
-          group,
-          stockName: item?.stock_name ?? current.taiwan.stockName,
-          market: item?.market ?? current.taiwan.market,
-          instrumentType:
-            item?.instrument_type ?? current.taiwan.instrumentType,
-        },
-      }
-    : current;
+
+  return {
+    ...current,
+    taiwan: {
+      ...current.taiwan,
+      groupId: group?.id ?? null,
+      group,
+      stockName: item?.stock_name ?? current.taiwan.stockName,
+      market: item?.market ?? current.taiwan.market,
+      instrumentType:
+        item?.instrument_type ?? current.taiwan.instrumentType,
+    },
+  };
 }
 
 export function reconcileUsExplorerSelection(

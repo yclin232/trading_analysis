@@ -465,14 +465,14 @@ class TwseBackfillResultRead(BaseModel):
 
 class MarketOhlcChartRead(BaseModel):
     stock_id: str
-    timeframe: str
-    bars: int
-    requested_bar_count: int
-    available_bar_count: int
-    returned_point_count: int
-    bars_legacy_count: int
+    timeframe: str = "daily"
+    bars: int = 90
+    requested_bar_count: int = 0
+    available_bar_count: int = 0
+    returned_point_count: int = 0
+    bars_legacy_count: int = 0
     deprecated_fields: list[str] = Field(default_factory=list)
-    lookback_days: int
+    lookback_days: int = 0
     from_date: date
     to_date: date
     requested_to_date: date | None = None
